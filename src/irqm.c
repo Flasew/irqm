@@ -75,9 +75,7 @@ static ssize_t driver_write(struct file *filep,
 	const char *buffer,
 	size_t len,
 	loff_t *offset){
-		
-	state.msg_len = 0;
-		
+			
 	ktime_t t;
 
 	t = ktime_get();
@@ -90,8 +88,8 @@ static ssize_t driver_write(struct file *filep,
 	copy_from_user(state.msg,(void*)buffer,(unsigned long)len)
 	state.msg_len = len;
 	
-	state.log[state.idx_user]->t_user = t;
-	state.log[state.idx_user]->irq_user = t;
+	state.log[state.idx_user]->t_user = (int)t;
+	state.log[state.idx_user]->irq_user = state.irqcount;
 	state.log[state.idx_user]->msg_len = state.msg_len;
 
 	strncpy(state.log[state.idx_user]->msg_user,state.msg,MAX_MSG_LEN);
@@ -142,7 +140,7 @@ irq_handler_t isr(unsigned int irq,
 	struct pt_regs *regs){
 		
 		
-	state.log[state.idx_isr]->t_irq = ktime_get();
+	state.log[state.idx_isr]->t_irq = (int) ktime_get();
 	state.log[state.idx_isr]->irq_isr = state.irqcount;
 		
 	state.sent = 0; /* !!!! */
@@ -179,7 +177,6 @@ irq_handler_t isr(unsigned int irq,
 
 void msg_dispatch(struct work_struct * work){
 	
-	printk(KERN_ALERT "[irqm] dispatch\n");
 	
 	/* TODO: What happens if this call hangs at all? */
 	
@@ -189,7 +186,7 @@ void msg_dispatch(struct work_struct * work){
 			
 	file_sync(state.f);
 		
-	state.log[state.idx_dispatch]->t_dispatch = ktime_get();
+	state.log[state.idx_dispatch]->t_dispatch = (int) ktime_get();
 	state.log[state.idx_dispatch]->irq_dispatch = state.irqcount;
 	state.log[state.idx_dispatch]->msg_len = state.sent;
 
