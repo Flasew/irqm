@@ -29,6 +29,7 @@
 
 /* Slightly counterintuitive. Each of driver_write, isr, and msg_dispatch
  * independently cycle through the same circular buffer of event_records.
+ * 
  * */
 
 struct event_record {
@@ -36,21 +37,21 @@ struct event_record {
 	/* for driver_write */
 	
 	int irq_user; /* irqcount at call to driver_write */
-	ktime_t t_user;
+	int t_user; /* time at call to driver_write*/
 	char[MAX_MSG_LEN] msg_user;
 	int msg_len;
 	
 	/* for isr */
 	
 	int irq_isr; /* irqcount at interrupt */
-	ktime_t t_isr;
+	int t_isr;
 	
 	/* for msg_dispatch */
 	
 	int irq_dispatch; /* irqcount at call to msg_dispatch */
-	ktime_t t_dispatch;
+	int t_dispatch;
 	char[MAX_MSG_LEN] msg_dispatch;
-	ktime_t t_flush;
+	int t_flush;
 	int bytes_sent;
 	
 };

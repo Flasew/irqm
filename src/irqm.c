@@ -177,6 +177,10 @@ irq_handler_t isr(unsigned int irq,
 
 void msg_dispatch(struct work_struct * work){
 	
+	ktime_t t;
+	
+	t = ktime_get();
+	
 	
 	/* TODO: What happens if this call hangs at all? */
 	
@@ -186,8 +190,9 @@ void msg_dispatch(struct work_struct * work){
 			
 	file_sync(state.f);
 		
-	state.log[state.idx_dispatch]->t_dispatch = (int) ktime_get();
-	state.log[state.idx_dispatch]->irq_dispatch = state.irqcount;
+	state.log[state.idx_dispatch]->t_flush = (int) ktime_get();
+	state.log[state.idx_dispatch]->t_dispatch = (int) t;
+	state.log[state.idx_dispatch]->irq_dispatch = state.irqcount - 1;
 	state.log[state.idx_dispatch]->msg_len = state.sent;
 
 	strncpy(state.log[state.idx_dispatch]->msg_dispatch,state.msg,MAX_MSG_LEN);
