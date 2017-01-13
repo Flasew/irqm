@@ -16,7 +16,7 @@ struct event_record {
 	
 	int irq_user; /* irqcount at call to driver_write */
 	int t_user; /* time at call to driver_write*/
-	char[MAX_MSG_LEN] msg_user;
+	char msg_user[MAX_MSG_LEN];
 	int msg_len;
 	
 	/* for isr */
@@ -28,14 +28,41 @@ struct event_record {
 	
 	int irq_dispatch; /* irqcount at call to msg_dispatch */
 	int t_dispatch;
-	char[MAX_MSG_LEN] msg_dispatch;
+	char msg_dispatch[MAX_MSG_LEN];
 	int t_flush;
 	int bytes_sent;
 	
 };
 
+
+
 /* ---- End inclusion from src/irqm.h ---- */
 
+typedef char MSG[MAX_MSG_LEN];
+
+struct formatted_log {
+
+	/* for driver_write */
+	
+	int irq_user[LOG_LEN]; /* irqcount at call to driver_write */
+	int t_user[LOG_LEN]; /* time at call to driver_write*/
+	MSG msg_user[LOG_LEN];
+	int msg_len[LOG_LEN];
+	
+	/* for isr */
+	
+	int irq_isr[LOG_LEN]; /* irqcount at interrupt */
+	int t_isr[LOG_LEN];
+	
+	/* for msg_dispatch */
+	
+	int irq_dispatch[LOG_LEN]; /* irqcount at call to msg_dispatch */
+	int t_dispatch[LOG_LEN];
+	MSG msg_dispatch[LOG_LEN];
+	int t_flush[LOG_LEN];
+	int bytes_sent[LOG_LEN];
+
+};
 
 /* Function to allow ctypes to know how many bytes of log buffer
  * there are.
@@ -43,10 +70,9 @@ struct event_record {
  * TODO: make LOG_LEN and sizeof(event_record) available through
  * sysfs */
 
-int nbytes(){
-	
-	return LOG_LEN * sizeof(event_record);
-	
+int log_len(){
+
+	return LOG_LEN;
 }
 
 
@@ -62,6 +88,11 @@ struct event_record * get(char * fname) {
 	close(fd);
 	
 	return buff;
+}
+
+void cfree(void * ptr) {
+
+	free(ptr);
 }
 
 /* ctypes pointers are iterables */

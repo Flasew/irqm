@@ -38,7 +38,7 @@ struct event_record {
 	
 	int irq_user; /* irqcount at call to driver_write */
 	int t_user; /* time at call to driver_write*/
-	char[MAX_MSG_LEN] msg_user;
+	char msg_user[MAX_MSG_LEN];
 	int msg_len;
 	
 	/* for isr */
@@ -50,7 +50,7 @@ struct event_record {
 	
 	int irq_dispatch; /* irqcount at call to msg_dispatch */
 	int t_dispatch;
-	char[MAX_MSG_LEN] msg_dispatch;
+	char msg_dispatch[MAX_MSG_LEN];
 	int t_flush;
 	int bytes_sent;
 	

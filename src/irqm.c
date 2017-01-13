@@ -92,7 +92,7 @@ static ssize_t driver_write(struct file *filep,
 	state.log[state.idx_user]->irq_user = state.irqcount;
 	state.log[state.idx_user]->msg_len = state.msg_len;
 
-	strncpy(state.log[state.idx_user]->msg_user,state.msg,MAX_MSG_LEN);
+	strncpy(state.log[state.idx_user]->msg_user,state.msg,len);
 	
 	state.idx_user = ++state.idx_user % LOG_LEN;
 	
