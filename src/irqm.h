@@ -1,3 +1,6 @@
+#ifndef __IRQM__
+#define __IRQM__
+
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
@@ -23,38 +26,7 @@
 #include <asm/uaccess.h>
 
 #include "vfs.h"
-
-#define MAX_MSG_LEN 256
-#define LOG_LEN 512
-
-/* Slightly counterintuitive. Each of driver_write, isr, and msg_dispatch
- * independently cycle through the same circular buffer of event_records.
- * 
- * */
-
-struct event_record {
-	
-	/* for driver_write */
-	
-	int irq_user; /* irqcount at call to driver_write */
-	int t_user; /* time at call to driver_write*/
-	char msg_user[MAX_MSG_LEN];
-	int msg_len;
-	
-	/* for isr */
-	
-	int irq_isr; /* irqcount at interrupt */
-	int t_isr;
-	
-	/* for msg_dispatch */
-	
-	int irq_dispatch; /* irqcount at call to msg_dispatch */
-	int t_dispatch;
-	char msg_dispatch[MAX_MSG_LEN];
-	int t_flush;
-	int bytes_sent;
-	
-};
+#include "log.h"
 
 
 /* Neither of these structs are intended to be dynamically
@@ -88,24 +60,14 @@ struct driver_state {
 	struct file* f; /* destination for vfs write */
 	
 	struct workqueue_struct* workqueue;
-	struct work_struct work;
-	
+
+	struct list_head * log;
+
 	wait_queue_head_t waitqueue;
 	
 	struct mutex lock; /* prevent multiple processes from using driver */
 	
-	char msg[MAX_MSG_LEN]; 
-	int msg_len;
-	
-	int sent; /* number of bytes sent on last vfs write */
-	
-	event_record * log;
-	int idx_user;
-	int idx_isr;
-	int idx_dispatch;
-	
-	int dispatch_ready;
-	
+
 };
 
 static int driver_open(struct inode *inodep, struct file *filep);
@@ -161,3 +123,5 @@ module_param_named(delay_msec,params.delay_msec, ulong, 0644);
 module_param_named(delay_usec,params.delay_usec, ulong, 0644);
 module_param_named(driver_name,params.driver_name, charp, 0644);
 module_param_named(target_path,params.target_path, charp, 0644);
+
+#endif

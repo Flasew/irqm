@@ -4,10 +4,6 @@ MODULE_LICENSE("Dual BSD/GPL");
 
 static int __init char_init(void) {
 	
-	state.dispatch_ready = 1;
-	
-	state.msg_len = 0;
-	state.sent = 0;
 	
 	params.timeout_jiffies = 1000 * HZ * params.timeout_msec;
 	
@@ -18,9 +14,6 @@ static int __init char_init(void) {
 	register_chrdev_region(params.devno,
 		1, params.driver_name);
 
-
-	INIT_WORK(&state.work, msg_dispatch);
-
 	state.workqueue = 
 		create_workqueue(params.driver_name);
 		
@@ -28,6 +21,8 @@ static int __init char_init(void) {
 		O_WRONLY | O_CREAT,
 		S_IRWXO);
 		
+
+	state.log = log_init(LOG_LEN);
 		
 	request_irq(params.irqno,
 		(irq_handler_t) isr,
@@ -39,11 +34,6 @@ static int __init char_init(void) {
 
 	mutex_init(&state.lock);
 	state.irqcount = 0;
-	
-	state.log = (event_record*) vzalloc(sizeof(event_record)*LOG_LEN);
-	state.idx_user = 0;
-	state.idx_dispatch = 0;
-	state.idx_isr = 0;
 	
 	printk(KERN_ALERT "[irqm] irq = %d, target=%s, major=%i\n",
 		params.irqno,
@@ -57,14 +47,14 @@ static void __exit char_exit(void) {
 
 	unregister_chrdev_region(params.devno,1);
 	cdev_del(&params.cdev);
-	
-	vfree(state.log);
-	
+		
 	flush_workqueue(state.workqueue);
 	destroy_workqueue(state.workqueue);
 	
 	file_close(state.f);
 	free_irq(params.irqno, (void *) &params);
+
+	log_del(state.log);
 
 	printk(KERN_ALERT "[irqm] unregistered\n");
 	
@@ -75,10 +65,35 @@ static ssize_t driver_write(struct file *filep,
 	const char *buffer,
 	size_t len,
 	loff_t *offset){
-			
+
 	ktime_t t;
+	struct list_head * pos;
+	struct ticket * entry;
 
 	t = ktime_get();
+
+	entry = NULL;
+
+	/* Find the first overwritable ticket from state.log */
+	list_for_each(pos,state.log){
+
+		entry = list_entry(pos,struct ticket,list);
+		if (entry->flags == OVERWRITABLE){
+
+			/* claim this ticket for use here */
+
+			WRITE_ONCE(entry->flags);
+
+			break;
+		}
+
+	}
+
+
+
+
+	WRITE_ONCE();
+
 		
 	/* block until the last msg_dispatch() returns */
 	flush_workqueue(state.workqueue);	
